@@ -1,0 +1,178 @@
+---
+title: "Evaluations of positive and negative stimuli using the Affective Misattribution Procedure (AMP) and self-reports"
+subtitle: "Data processing"
+author: "Template: Ian Hussey; content: Gian Wegmueller"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_folding: hide
+    highlight: haddock
+    theme: flatly
+    toc: yes
+    toc_float: yes
+---
+
+```{r, include=FALSE}
+
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+
+```
+
+# Dependencies
+
+```{r}
+
+library(dplyr)
+library(tidyr)
+library(readr)
+library(janitor) # for clean_names()
+library(stringr)
+
+```
+
+# Get data
+
+```{r}
+
+# demographics
+data_demographics_raw_messy <- read_csv("../data/raw/data_demographics_raw_messy.csv", skip = 2) |> #relative path: two dots before the slash means "go up one folder" in the file hierarchy, relative to where this .rmd lives. 
+  janitor::clean_names() #automatically cleans up names of variables
+
+data_demographics_raw <- read_csv("../data/raw/data_demographics_raw.csv") |>
+  janitor::clean_names()
+
+# self report measure
+data_selfreport_raw <- read_csv("../data/raw/data_selfreport_raw.csv") |>
+  janitor::clean_names()
+
+# affect attribution procedure
+data_amp_raw <- read_csv("../data/raw/data_amp_raw.csv") |>
+  janitor::clean_names()
+
+```
+
+# Demographics
+
+Clean the demographics data so that summaries of age and gender can be made in the analysis.
+
+```{r}
+
+## pipe operator
+# %>%  tidyverse pipe
+# |> base R pipe
+
+
+## FIRST ATTEMPTS AT DATA WRANGLING WITH VARIABLE AGE
+
+# dat_age_gender <- data_demographics_raw |>  
+#   select(subject, trialcode, response) |> # select the columns of interest
+#   rename(unique_id = subject, item = trialcode) |>  # rename columns to more intuitive names
+#   filter(item == "age") |>  # filter out all rows with "age" in column item
+#   mutate(response = str_remove_all(response, "\\D"), #remove all non-numeric characters from the variable response (there is one value "old", because some participant felt funny..), ATTENTION: if a participant wrote their age in letters instead of numbers (e.g., twenty), we are loosing information. 
+#          response = na_if(response, ""), #if response = "" (because "old" was removed and cell is now empty), assign NA
+#          response = as.numeric(response)) #convert to numeric values
+
+
+## TO DO FOR NEXT WEEK (07.10.2024)
+# Do same kind of data wrangling for the gender variable, and commit and push to GitHub
+
+## Create wide format data frame and clean up age and gender variables
+dat_age_gender_wide <- data_demographics_raw |> 
+  select(subject, trialcode, response) |> # select the columns of interest
+  rename(unique_id = subject, item = trialcode) |> # rename columns to more intuitive names
+  distinct(unique_id, item, response, .keep_all = TRUE) |> # there are duplicate entries for one unique_id, remove those duplicates, keep the first distinct row of values
+  
+  pivot_wider(names_from = item, # transform to wide with variable names coming from 'item'
+              values_from = response) |> # and respective values from the variable 'response'; now the data frame contains the three columns unique_id, age, and gender
+  
+  mutate(age = str_remove_all(age, "\\D"), #remove all non-numeric characters from the variable age (there is one value "old", because some participant felt funny..), ATTENTION: if a participant wrote their age in letters instead of numbers (e.g., twenty), we are loosing information.
+         age = na_if(age, ""), #if age = "" (because "old" was removed and cell is now empty), assign NA
+         age = as.numeric(age)) |>  #convert to numeric values
+  #what responses to gender do exist in the data? -> distinct(dat_age_gender_wide, gender)
+  mutate(gender = case_when( #clean up responses to gender with case_when()
+    gender %in% c("female", "FEMALE", "Female", "Woman") ~ "female", #if gender contains any of these versions of "female", assign the value "female"
+    gender %in% c("Male", "male", "MALE") ~ "male", #if gender contains any of these versions of "male", assign the value "male"
+    gender %in% c("non binary", "Non-Binary") ~ "non binary", #if gender contains any of these versions of "non binary", assign the value "non binary"
+    TRUE ~ NA_character_ #assign NA to everything that does not match the expressions above (23 and yes in this case)
+  ))
+  
+
+
+```
+
+# Exclusions / data quality
+
+## AMP
+
+Create an exclusion variable `exclude_amp_performance` based on AMP performance: "exclude" if more than 10% of trials are < 100ms, or "include" if not.
+
+Create an exclusion variable `exclude_amp_completeness` based on the AMP having the right number of trials.
+
+```{r}
+
+#data_amp_performance_criteria <- data_amp_raw 
+
+```
+
+# Self-reports
+
+Create a mean score for each participant of the three self-report items.
+
+```{r}
+
+#data_selfreport_trial_level <- data_selfreport_raw 
+
+```
+
+# Affect Misattribution Procedure
+
+Create an overall AMP bias score. Score each trial as having been evalauted as congruent with the prime or not. eg When trialcode == "prime_positive" & evaluative_response == 1, then record as 1, etc. AMP score is the proportion of congruent responses.
+
+```{r}
+
+#data_amp_score_congruence <- data_amp_raw 
+
+```
+
+# Combine 
+
+Combine data frames together to create one wide-format data frame where each row represents a participant.
+
+Flag all duplicates for exclusion.
+
+```{r}
+
+# data_processed_before_exclusions 
+
+```
+
+# Define master exclusion variable
+
+```{r}
+
+#data_processed <- data_processed_before_exclusions
+
+```
+
+# Write to disk
+
+```{r}
+
+# # in case this dir doesn't exist, create it
+# dir.create("../data/processed/")
+# 
+# # save data to disk in that dir
+# write_csv(data_processed, "../data/processed/data_processed.csv")
+
+```
+
+# Session info
+
+```{r}
+
+sessionInfo()
+
+```
+
+

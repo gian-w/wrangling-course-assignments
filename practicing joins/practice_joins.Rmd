@@ -134,9 +134,10 @@ data_missing_ids <-
   anti_join(x = data_combined_3,
             y = data_unique_id_subset,
             by = join_by(unique_id)) |> 
-  select(unique_id)
+  select(unique_id) |> 
+  distinct() # if there are duplicates, just return the unique/distinct observations
 
-# the new data set contains 13 observations which were missing in data_unique_id_subset but were present in data_combined_3
+# the new data set contains 10 observations which were missing in data_unique_id_subset but were present in data_combined_3
 
 ```
 

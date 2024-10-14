@@ -1,6 +1,6 @@
 ---
 title: "Practicing joins"
-author: "Template: Ian Hussey; content: [Student name]"
+author: "Template: Ian Hussey; content: Gian Wegmueller"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
@@ -53,7 +53,14 @@ create 'data_combined' by joining data_amp_summary_subset and data_age_gender_su
 
 ```{r}
 
-# data_combined <- 
+# the goal is to keep every row from x and every row from y ('unique_ids in either data frame are retained'). To achieve this, a full_join() is needed. data_age_gender_subset contains 90 observations, data_amp_summary_subset contains 31 observations. A full join tries to match all unique_ids and those who do not match in the other data set will just get an NA on that variable, but will retain the value from the data set in which they exist.
+data_combined <-  
+  full_join(x = data_amp_summary_subset, # left data set
+            y = data_age_gender_subset, # right data set
+            by = join_by(unique_id)) #join by unique_id, so only one column 'unique_id' will be retained in the new data frame, but containing all unique observations from both data sets
+
+# the new data_combined data frame now has 95 observations, indicating that some observations were unique to the y data set
+
 
 ```
 
@@ -63,7 +70,14 @@ create 'data_self_reports_and_their_amp_data' by joining data_selfreport_summary
 
 ```{r}
 
-# data_self_reports_and_their_amp_data <- 
+#to join the two data sets so that all participants have self-report data + AMP data if available, a left_join() by unique_id is needed. left_join() keeps all observations in x and only joins those in y which match with the ones in x. If the participants in the AMP data set (which is the right data set) do not appear in the self-report data, they won't be in the new data frame. All participants from the selfreport_subset will be retained and their AMP data, if available, will be added as a new variable.  
+
+data_self_reports_and_their_amp_data <- 
+  left_join(x = data_selfreport_summary_subset, 
+            y = data_amp_summary_subset, 
+            by = join_by(unique_id))
+
+# the new data frame still contains 76 rows and now 3 variables, which are unique_id, mean_self_report, and mean_reaction_time...
 
 ```
 
@@ -73,7 +87,14 @@ do the opposite: create 'data_amp_data_and_their_self_reports' by joining data_a
 
 ```{r}
 
-# data_amp_data_and_their_self_reports <- 
+#to join the two data sets so that all participants have AMP data + self-report data if available, a right_joint() by unique_id is needed.To keep it consistent, the larger data set will still be x and the smaller y. right_join() keeps all observations in y and only joins those in x which match with the ones in y. If the participants in the self-report data (which is the left data set) do not appear in the AMP data, they won't be in the new data frame. All participants from the AMP data will be retained and their self-report data, if available, will be added as a new variable.
+
+data_amp_data_and_their_self_reports <- 
+  right_join(x = data_selfreport_summary_subset, 
+             y= data_amp_summary_subset,
+             by = join_by(unique_id))
+
+# the new data set still contains 31 rows and now 3 variables. note that the first column after unique_id is still the self-report mean, which comes from the left/x data set, even though only the observations from y were retained! 
 
 ```
 
@@ -82,8 +103,14 @@ do the opposite: create 'data_amp_data_and_their_self_reports' by joining data_a
 create data_combined_2 by joining 'data_combined' and data_selfreport_summary_subset only unique_ids already present in data_combined are retained. which join is this? implement it. 
 
 ```{r}
+#to join the two data sets and only retain unique_ids already present in data_combined, an inner_join() is needed. inner_join() only keeps observations from x (data_combined) that have a matching key (unique_id) in y (data_selfreport_summary_subset). Only the participants from data_combined which are also present in data_selfreport... are retained.
 
-# data_combined_2 <- 
+data_combined_2 <- 
+  inner_join(x = data_combined,
+             y = data_selfreport_summary_subset,
+             by = join_by(unique_id))
+
+#the new data frame now contains only 73 observations, so it is likely that 3 observations from the self-report data were not present in the data_combined, therefore they were excluded.
 
 ```
 
@@ -93,7 +120,23 @@ create 'data_missing_ids' which should list the unique_ids are missing from data
 
 ```{r}
 
-# data_missing_ids <- 
+# first, create a combined data set with data_age_gender..., data_amp..., and data_selfreport..., using full_join() to retain all unique_ids in each data set
+data_combined_3 <- 
+  full_join(x = data_age_gender_subset,
+            y = data_amp_summary_subset,
+            by = join_by(unique_id)) |> #join age_gender and amp by unique_id...
+  full_join(y = data_selfreport_summary_subset, #then join the selfreport data to the newly created data frame, which gets piped to the x = argument
+            by = join_by(unique_id))
+
+# now onto the missing ids: data_combined_3 contains 101 observations, whereas data_unique_id_subset contains only 92 observations. Thus, not all unique_ids present in the combined_3 data set appear in the unique_id data set. To check which those are and to retain them in a data frame, an anti_join() is needed. anti_join() drops all rows from x that have a match in y. So in the present case, if we want to list the unique_ids in data_combined_3 that are missing in  data_uniqe_id_subset, x = data_combined_3, and y = data_unique_id_subset -> returns all rows from data_combined without a match in data_unique_id_subset
+
+data_missing_ids <- 
+  anti_join(x = data_combined_3,
+            y = data_unique_id_subset,
+            by = join_by(unique_id)) |> 
+  select(unique_id)
+
+# the new data set contains 13 observations which were missing in data_unique_id_subset but were present in data_combined_3
 
 ```
 

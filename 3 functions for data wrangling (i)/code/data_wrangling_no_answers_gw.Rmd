@@ -89,7 +89,7 @@ All of the data are repeated measures. Participants had to answer questions at d
 - Why are the numbers not round?
 Likely because not all participants have the same number of measurement timepoints...
 
-# The pipe (%>% or %>%) 
+# The pipe (%>% or |>) 
 
 `%>%` is the original pipe created for the {magrittr} package and used throughout the tidyverse packages. It is slightly slower but also more flexible.
 
@@ -173,7 +173,7 @@ Rewrite each of the below to use the pipe.
 data_demographics_clean_names <- clean_names(data_demographics_raw) 
 
 #pipe
-data_demographics_clean_names2 <- data_demographics_raw |> 
+data_demographics_clean_names2 <- data_demographics_raw %>%
   clean_names()
 
 #check if identical
@@ -182,7 +182,7 @@ identical(data_demographics_clean_names, data_demographics_clean_names2)
 data_selfreport_clean_names <- clean_names(data_selfreport_raw) 
 
 #pipe
-data_selfreport_clean_names2 <- data_selfreport_raw |> 
+data_selfreport_clean_names2 <- data_selfreport_raw %>%
   clean_names()
 
 #check if identical
@@ -192,7 +192,7 @@ identical(data_selfreport_clean_names, data_selfreport_clean_names2)
 data_amp_clean_names <- clean_names(data_amp_raw) 
 
 #pipe
-data_amp_clean_names2 <- data_amp_raw |> 
+data_amp_clean_names2 <- data_amp_raw %>%
   clean_names()
 
 #check if identical
@@ -216,13 +216,13 @@ data_demographics_clean_names %>%
   dput()
 
 #data_selfreport_clean_names
-data_selfreport_clean_names |> 
-  colnames() |> 
+data_selfreport_clean_names %>%
+  colnames() %>%
   dput()
 
 #data_amp_clean_names
-data_amp_clean_names |> 
-  colnames() |> 
+data_amp_clean_names %>%
+  colnames() %>%
   dput()
 
 ```
@@ -277,25 +277,25 @@ Remember: this is how we solve coding problems: break them down into smaller tas
 rm(list = ls())
 
 
-data_demographics_trimmed <- read_csv("../data/raw/data_demographics_raw.csv") |> 
-  clean_names() |> 
+data_demographics_trimmed <- read_csv("../data/raw/data_demographics_raw.csv") %>%
+  clean_names() %>%
   rename(unique_id = subject,
-         item = trialcode) |> 
+         item = trialcode) %>%
   select(unique_id, item, response)
 
 
-data_selfreport_trimmed <- read_csv("../data/raw/data_selfreport_raw.csv") |> 
-  clean_names() |> 
+data_selfreport_trimmed <- read_csv("../data/raw/data_selfreport_raw.csv") %>%
+  clean_names() %>%
   rename(unique_id = subject,
-         item = trialcode) |> 
+         item = trialcode) %>%
   select(unique_id, item, response)
 
 
-data_amp_trimmed <- read_csv("../data/raw/data_amp_raw.csv") |> 
-  clean_names() |> 
+data_amp_trimmed <- read_csv("../data/raw/data_amp_raw.csv") %>%
+  clean_names() %>%
   rename(unique_id = subject,
          block = blockcode, 
-         trial_type = trialcode) |> 
+         trial_type = trialcode) %>%
   select(unique_id, block, trial_type, correct, latency)
 
 ```
@@ -408,11 +408,11 @@ Filter the self reports data frame to remove the instructions. Filter the AMP da
 
 ```{r}
 
-data_selfreport_trials <- data_selfreport_trimmed |> 
+data_selfreport_trials <- data_selfreport_trimmed %>%
   filter(item %in% c("positive", "prefer", "like")) #use positive filtering instead of negative (filter(item != "instructions"))
 
 
-data_amp_trials <- data_amp_trimmed |> 
+data_amp_trials <- data_amp_trimmed %>%
   filter(block == "test" & trial_type != "instructions") #keep only the observations where block matches "test" and trial_type is not "instructions"
 
 ```
@@ -564,17 +564,17 @@ Use `ifelse()` and `%in%` inside `mutate()` to change values other than the Like
 ```{r}
 
 # what values are present?
-data_selfreport_trials |> 
+data_selfreport_trials %>%
   count(response) 
 
 # values from 1-7 represent possible answers on the Likert scale, there is one odd response "Ctrl+B", which needs to be changed to NA
 
-data_selfreport_trials_tidy <- data_selfreport_trials |> 
+data_selfreport_trials_tidy <- data_selfreport_trials %>%
   mutate(response = ifelse(response %in% c("1", "2", "3", "4", "5", "6", "7"), response, NA),
          response = as.numeric(response))
 
 # sanity check: did I do the right thing?
-data_selfreport_trials_tidy |> 
+data_selfreport_trials_tidy %>%
   count(response) 
 
 
@@ -585,7 +585,7 @@ What other ways are there of implementing this mutate, e.g., without using `%in%
 ```{r}
 
 # write examples here
-data_selfreport_tidy_ex1 <- data_selfreport_trials |> 
+data_selfreport_tidy_ex1 <- data_selfreport_trials %>%
   mutate(response = ifelse(response == "Ctrl+B", NA, response), 
          response = as.numeric(response))
 ## this way could potentially miss some other non Likert responses that might be introduced into the dataset later, generally it is better not to use negations!!
@@ -601,7 +601,7 @@ The AMP data needs to be reverse scored. Just like an item on a self-report that
 
 ```{r}
 
-data_amp_tidy <- data_amp_trimmed |> 
+data_amp_tidy <- data_amp_trimmed %>%
   mutate(correct = case_when(trial_type %in% c("prime_positive", "prime_positive_practice")  ~ correct, #if trial_type positive, leave value as is
                              trial_type %in% c("prime_negative", "prime_negative_practice") & correct == 0 ~ 1, #if negative AND correct == 0, change value to 1
                              trial_type %in% c("prime_negative", "prime_negative_practice") & correct == 1 ~ 0)) #if negative AND correct == 1, change value to 0
@@ -774,24 +774,24 @@ Using only participants with complete data, calculate the mean and SD of all par
 ```{r}
 
 # min, max, mean, and SD of all responses on the self report data
-data_selfreport_trials_tidy |> 
-  group_by(item) |> 
+data_selfreport_trials_tidy %>%
+  group_by(item) %>%
   summarize(min = min(response, na.rm = TRUE),
             max = max(response, na.rm = TRUE),
             mean = round_half_up(mean(response, na.rm = TRUE), digits = 2),
             SD = round_half_up(sd(response, na.rm = TRUE), digits = 2))
 
 # mean for each participant and number of items complete
-data_selfreport_summarized <- data_selfreport_trials_tidy |> 
-  group_by(unique_id) |> 
+data_selfreport_summarized <- data_selfreport_trials_tidy %>%
+  group_by(unique_id) %>%
   summarize(mean_self_report = round_half_up(mean(response, na.rm = TRUE), digits = 2),
-            n_items = n()) |>  # remember, that count() is basically a group_by(), summarize(), n() call!
+            n_items = n()) %>% # remember, that count() is basically a group_by(), summarize(), n() call!
   mutate(complete = ifelse(n_items == 3, TRUE, FALSE)) #if n_items == 3 (complete answers), assign TRUE, else FALSE
 
 
 # mean and SD of means of all participants with complete data
-data_selfreport_summarized |> 
-  filter(complete == TRUE) |> 
+data_selfreport_summarized %>%
+  filter(complete == TRUE) %>%
   summarize(mean_complete = round_half_up(mean(mean_self_report), digits = 2),
             sd_complete = round_half_up(sd(mean_self_report), digits = 2))
 
@@ -806,16 +806,16 @@ Calculate the proportion of participants who are to be excluded.
 ```{r}
 
 # new data frame with prop prime-congruent and prop too-fast trials for each participant
-data_amp_trials <- data_amp_tidy |> 
-  mutate(too_fast_trial = ifelse(latency < 100, TRUE, FALSE)) |> 
-  group_by(unique_id) |> 
+data_amp_trials <- data_amp_tidy %>%
+  mutate(too_fast_trial = ifelse(latency < 100, TRUE, FALSE)) %>%
+  group_by(unique_id) %>%
   summarize(prop_congruent = round_half_up(mean(correct, na.rm = TRUE), digits = 2),
-            prop_too_fast = round_half_up(mean(too_fast_trial), digits = 2)) |> 
+            prop_too_fast = round_half_up(mean(too_fast_trial), digits = 2)) %>%
   mutate(exclude_amp = ifelse(prop_too_fast > 0.10, "exclude", "include"))
 
 # proportion of participants who are to be excluded:
-data_amp_trials |> 
-  mutate(exclude_amp_boolean = ifelse(exclude_amp == "exclude", TRUE, FALSE)) |> 
+data_amp_trials %>%
+  mutate(exclude_amp_boolean = ifelse(exclude_amp == "exclude", TRUE, FALSE)) %>% 
   summarize(prop_exclude = round_half_up(mean(exclude_amp_boolean), digits = 3))
 
 

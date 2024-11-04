@@ -81,10 +81,17 @@ Useful arguments:
 - `skip` can be used to skip the first N rows while reading the data
 
 ```{r}
+# What is the difference between {readr}'s read_csv and base R's read.csv?
 
+?read_csv()
 
+# `read_csv()` is more explicit about what assumption it is making about column types, and prints warning messages about what it has assumed. It is therefore the clearer and more transparent version. 
 
-# readr::read_csv()
+## Load example data
+data_amp_raw <- read_csv(file = "data/raw/data_amp_raw.csv")
+data_demographics_raw <- read_csv(file = "data/raw/data_demographics_raw.csv")
+data_selfreport_raw <- read_csv(file = "data/raw/data_selfreport_raw.csv")
+
 
 ```
 
@@ -110,31 +117,129 @@ Useful arguments:
 
 ## the pipe: `%>%` or `|>`
 
+`%>%` is the original pipe created for the {magrittr} package and used throughout the tidyverse packages. It is slightly slower but also more flexible. It can handle cases where the input data needs to be passed to a non-first argument or in specific nested ways.
+
+`|>` is a version of the pipe, also called native pipe operator, more recently added to base-R. It is slightly faster but less flexible.  It uses a simple syntax where the result of the left-hand side expression is passed as the first argument to the function on the right-hand side.
+
+**What is the pipe?**
+The output of what is left of the pipe is used as the input to the right of the pipe, usually as the first argument or the data argument. The pipe allows us to write code that reads from top to bottom, following a series of steps, in the way that humans organize and describe steps. Without the pipe, code is written from the inside out, in the way that the computer understands it but humans do not as easily.
+
 ```{r}
 
-# %>% - tidyverse version
+# use a function without the pipe
+example_without_pipe <- clean_names(data_demographics_raw)
 
-# |> - base R version
+# use a function with the pipe. the output of what is left of the pipe is used as the input to the right of the pipe, usually as the first argument or the data argument.
+example_with_pipe <- data_demographics_raw %>%
+  clean_names()
+
+# check they produce identical results
+identical(example_without_pipe, example_with_pipe)
 
 ```
+
+The utility of this becomes more obvious when there are many steps:
+
+```{r}
+
+# use a series of functions without the pipe
+example2_without_pipe <- summarise(group_by(mutate(rename(clean_names(dat = data_amp_raw), unique_id = subject, block = blockcode, trial_type = trialcode, rt = latency), fast_trial = ifelse(rt < 100, 1, 0)), unique_id), percent_fast_trials = mean(fast_trial)*100) 
+
+## the above code reads from the innermost function to the outermost and is way harder to understand and write for us humans.
+
+# use a series of functions with the pipe
+example2_with_pipe <- data_amp_raw %>%
+  # clean the column names
+  clean_names() %>%
+  # rename the columns
+  rename(unique_id = subject,
+         block = blockcode,
+         trial_type = trialcode,
+         rt = latency) %>%
+  # create a new variable using existing ones
+  mutate(fast_trial = ifelse(rt < 100, 1, 0)) %>%
+  # summarize across trials for each participant
+  group_by(unique_id) %>%
+  summarise(percent_fast_trials = mean(fast_trial)*100) 
+
+# check they produce identical results
+identical(example2_without_pipe, example2_with_pipe)
+
+```
+
+
+### Nerdy details on the pipe(s)
+
+The {magrittr} `%>%`: 
+- is slightly slower due to the additional package overhead, though the difference is generally minimal
+- allows flexible positioning through the use of the `.` placeholder. For example, you can write `data %>% f(arg1, .)` to place `data` in a position other than the first argument.
+- may consume more memory, especially if the pipeline involves creating many intermediate objects. Each `%>%` call constructs a new environment, which can accumulate if garbage collection doesn’t clear them quickly.
+- in larger datasets or for computationally intensive workflows, the greater flexibility calls for a trade-off in processing speed
+
+
+The native `|>`:
+- has less overhead, since it is part of R's core, and can be slightly faster
+- error messages and traceback might be more straightforward and easier to debug in some cases.
+- tends to use memory more efficiently since it directly pipes the output without added layers of abstraction.
+- better for large datasets or computationally intensive workflows, if you need better performance and faster processes
+
 
 ## round_half_up
 
+Did you know that R doesn't use the rounding method most of us are taught in school, where .5 is rounded up to the next integer? Instead it uses "banker's rounding", which is better when you round a very large number of numbers, but worse for reporting the results of specific analyses. 
+
+This is easier to show than explain. What do you expect the output of the below chunk to be? And what is the actual output?
+
 ```{r}
 
-# janitor::round_half_up()
+round(0.5)
+round(1.5)
+round(2.5)
+round(3.5)
+round(4.5)
+round(5.5)
 
 ```
 
+That is why we need to use `janitor::round_half_up()` in most of our R scripts:
+
+```{r}
+
+round_half_up(0.5)
+round_half_up(1.5)
+round_half_up(2.5)
+round_half_up(3.5)
+round_half_up(4.5)
+round_half_up(5.5)
+
+```
+
+
+
 ## clean_names
+
+The function takes and returns a data frame, for ease of piping. It "cleans" the column names of a data frame, such that the names are unique and consist only of the _ character, numbers, and letters. Capitalization preferences can be specified using the `case = ` argument. The default case is "snake" (i.e., this_is_snake_case). To see other types of cases, refer to `?to_any_case()`. 
 
 ```{r}
 
 # janitor::clean_names()
+?clean_names()
+
+# what are other supported cases?
+?to_any_case()
+
+
+# playing around with clean_names() function...
+
 
 ```
 
 ## filter
+
+This function is used on *rows*! You can specify the logical test for filtering in many ways, including equivalence (`==`), negation (`!=`), or membership (`%in%`). It is often better to define what you *do* want (using equivalence or membership) rather than what you *do not* want (negation), as negations are less robust to new data with weird values you didn't think of when you wrote the code. E.g., you could specify `gender != "non-binary"` but this would not catch `non binary`. If you were for example looking to include only men and women, instead use `gender %in% c("man", "woman")`.
+
+You can also have multiple criteria in your filter call, both of which have to be met (x `&` y), or either one of which have to be met (x `|` y).
+
 
 ```{r}
 
@@ -178,6 +283,8 @@ Used to extract specific columns from a data frame. Also useful for excluding co
 
 ## mutate
 
+`mutate()` is used to create new columns or to change the contents of existing ones. The operations inside mutate can range from the very simple, like the above, to much more complex. A single mutate call can also contain multiple mutates.
+
 ```{r}
 
 # dplyr::mutate()
@@ -194,17 +301,64 @@ Used to extract specific columns from a data frame. Also useful for excluding co
 
 ## summarize
 
+It is very common that we need to create summaries across rows. For example, to create the mean and standard deviation of a column like age. This can be done with `summarize()`. Remember: `mutate()` creates new columns or modifies the contents of existing columns, but does not change the number of rows. Whereas `summarize()` reduces a data frame down to one row.
+
 ```{r}
 
 # dplyr::summarize() 
 
 ```
 
+Like mutate, the operation you do to summarize can also be more complex, such as finding the mean result of a logical test to calculate a proportion. For example, INSERT EXAMPLE WITH MTCARS PACKAGE HERE
+
+```{r}
+
+# dplyr::summarize() 
+
+```
+
+You can also summarize (or indeed mutate) multiple columns in the same way using `across()`, for do-this-across-columns.
+
+```{r}
+
+mtcars %>%
+  # ... calculate the mean of every numeric column in the dataset ...
+  summarise(across(where(is.numeric), mean, na.rm = TRUE)) %>%
+  # ... and then round every column to one decimal place
+  mutate(across(everything(), round_half_up, digits = 1))
+
+```
+
+
 ## count
+
+It is very useful to use `count()` to obtain the frequency of each unique value of a given column. 
 
 ```{r}
 
 # dplyr::count()
+
+## example use with mtcars...
+
+
+
+```
+
+Note that it is also possible to use count to obtain the frequencies of sets of unique values across columns, e.g., unique combinations of item and response. It can be useful to arrange the output by the frequencies.
+
+```{r}
+
+# example with count(x, y) and arrange(desc(n))
+
+```
+
+Also note that `count()` is just the combination of group_by() and summarize() and n()!
+
+```{r}
+
+# add example of this with mtcars dataset...
+
+
 
 ```
 

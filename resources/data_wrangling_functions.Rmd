@@ -247,6 +247,20 @@ You can also have multiple criteria in your filter call, both of which have to b
 
 ```
 
+
+## str_detect
+
+Useful when applying filter to detect specific strings. Example: `str_detect(x, "x_y")` detects the string `"x_y"` in all strings of variable x, no matter where it is positioned. It could be at the beginning, in the middle, or at the end.
+
+```{r}
+
+test <- c("A", "A_", "B")
+str_detect(test, "A")
+str_detect(test, "_")
+str_detect(test, "B")
+
+```
+
 ## slice
 
 Slice is for retaining or dropping rows from a df.

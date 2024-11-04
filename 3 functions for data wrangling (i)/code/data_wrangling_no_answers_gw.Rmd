@@ -590,6 +590,10 @@ data_selfreport_tidy_ex1 <- data_selfreport_trials %>%
          response = as.numeric(response))
 ## this way could potentially miss some other non Likert responses that might be introduced into the dataset later, generally it is better not to use negations!!
 
+data_selfreport_tidy_ex2 <- data_selfreport_trials %>%
+  mutate(response = ifelse(response %in% as.character(seq(1:7)), response, NA),
+         response = as.numeric(response))
+
 
 ```
 

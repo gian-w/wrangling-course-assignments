@@ -782,10 +782,18 @@ data_selfreport_trials_tidy |>
             SD = round_half_up(sd(response, na.rm = TRUE), digits = 2))
 
 # mean for each participant and number of items complete
-data_selfreport_trials_tidy |> 
+data_selfreport_summarized <- data_selfreport_trials_tidy |> 
   group_by(unique_id) |> 
   summarize(mean_self_report = round_half_up(mean(response, na.rm = TRUE), digits = 2),
-            n_items = 
+            n_items = n()) |>  # remember, that count() is basically a group_by(), summarize(), n() call!
+  mutate(complete = ifelse(n_items == 3, TRUE, FALSE)) #if n_items == 3 (complete answers), assign TRUE, else FALSE
+
+
+# mean and SD of means of all participants with complete data
+data_selfreport_summarized |> 
+  filter(complete == TRUE) |> 
+  summarize(mean_complete = round_half_up(mean(mean_self_report), digits = 2),
+            sd_complete = round_half_up(sd(mean_self_report), digits = 2))
 
 ```
 
@@ -797,7 +805,20 @@ Calculate the proportion of participants who are to be excluded.
 
 ```{r}
 
-# data_amp_tidy
+# new data frame with prop prime-congruent and prop too-fast trials for each participant
+data_amp_trials <- data_amp_tidy |> 
+  mutate(too_fast_trial = ifelse(latency < 100, TRUE, FALSE)) |> 
+  group_by(unique_id) |> 
+  summarize(prop_congruent = round_half_up(mean(correct, na.rm = TRUE), digits = 2),
+            prop_too_fast = round_half_up(mean(too_fast_trial), digits = 2)) |> 
+  mutate(exclude_amp = ifelse(prop_too_fast > 0.10, "exclude", "include"))
+
+# proportion of participants who are to be excluded:
+data_amp_trials |> 
+  mutate(exclude_amp_boolean = ifelse(exclude_amp == "exclude", TRUE, FALSE)) |> 
+  summarize(prop_exclude = round_half_up(mean(exclude_amp_boolean), digits = 3))
+
+
 
 ```
 

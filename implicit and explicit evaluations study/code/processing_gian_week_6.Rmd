@@ -219,25 +219,37 @@ data_selfreport_tidied |>
   count(response)
 
 # one response is odd: "Ctrl+B", so only keep the ones possible
-temp2 <- data_selfreport_tidied |> 
+data_selfreport_tidied <- data_selfreport_tidied |> 
   mutate(response = ifelse(response %in% c("1","2","3","4","5","6","7"), response, NA)) |> 
   mutate(response = as.numeric(response))
 
-mean(data_selfreport_trial_level$response, na.rm = TRUE)
+mean(data_selfreport_tidied$response, na.rm = TRUE)
 
 ```
 
 - count number of unique_ids with correct/wrong number of responses
 - Exclude them
 - check your exclusions worked.
-- use: mutate, group_by, summarize, _join
-
 ```{r}
+# count number of unique_ids with correct/wrong number of responses
+data_selfreport_tidied %>% 
+  count(unique_id, name = "n_trials") %>% # counts number of rows for each participant, i.e. number of trials
+  count(n_trials, name = "n_participants_correct") # counts how many participants did 3 or 1 trial (3 = correct number)
 
+# exclude participants with < 3 trials
 
+data_selfreport_tidied_complete <- data_selfreport_tidied %>% 
+  group_by(unique_id) %>% 
+  mutate(n_trials = n()) %>%  # create new variable called n_trials which is just the number of observations grouped by unique_id. Mutate does that for every observations, so multiple times for every unique_id, since we still have the three trials and want to retain the different scores
+  filter(n_trials == 3) %>%  # filter only observations with the correct number of trials (which is 3), exclude the others
+  ungroup() #ungroup grouping variable
+  
+# check if exclusions worked
+data_selfreport_tidied_complete %>% 
+  count(unique_id, name = "n_trials") %>% # counts number of rows for each participant, i.e. number of trials
+  count(n_trials, name = "n_participants_correct") # counts how many participants did 3 or 1 trial (3 = correct number)
 
-# last step here...
-data_selfreport_tidied_complete <- 
+# exclusion worked, the two participants with just 1 trial are no longer in the dataset, all 97 participants with the correct number of trials were retained
 
 ```
 

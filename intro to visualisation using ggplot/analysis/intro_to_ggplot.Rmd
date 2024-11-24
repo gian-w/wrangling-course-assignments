@@ -1,6 +1,6 @@
 ---
 title: "Introduction to {ggplot2}"
-author: "Template: Ian Hussey; Content: [student name]"
+author: "Template: Ian Hussey; Content: Gian Wegmueller"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
@@ -36,7 +36,7 @@ library(scales)
 library(dplyr)
 library(tidyr)
 library(plotrix) 
-devtools::install_github("matthewbjane/ThemePark")
+# devtools::install_github("matthewbjane/ThemePark")
 library(ThemePark)
 library(patchwork)
 library(janitor)
@@ -157,7 +157,7 @@ Note that you can add additional function calls to objects later, e.g., overridi
 
 ```{r}
 
-plot_1 + theme_gameofthrones()
+plot_1 + theme_friends()
 
 ```
 
@@ -297,7 +297,7 @@ ggplot(data = summary_amp,
 ## Slightly better plot for AMP
 
 ```{r}
-
+  
 ggplot(data = summary_amp, 
        aes(x = gender, 
            y = amp_mean)) +
@@ -319,12 +319,14 @@ ggplot(data = summary_amp,
 
 Make a similar plot for the self-reports. 
 
+- Exercise: How to capitalize 'Male' and 'Female' by wrangling the data before plotting?
 - Use `coord_flip()` to swap the X and Y axes.
 
 ```{r}
 
 # summary statistics
-summary_selfreport <- data_after_exclusions %>% 
+summary_selfreport <- data_after_exclusions %>%
+  mutate(gender = stringr::str_to_title(gender)) %>% # str_to_title from stringr capitalizes the first letter of every string in a character vector (or character object in this case)
   group_by(gender) %>% 
   summarize(selfreport_mean = mean(mean_self_report),
             selfreport_se = plotrix::std.error(mean_self_report))
@@ -333,11 +335,22 @@ summary_selfreport <- data_after_exclusions %>%
 ggplot(data = summary_selfreport,
        aes(x = gender, 
            y = selfreport_mean)) +
-  geom_col(fill = )
+  geom_col(fill = "#414487", # color from viridis color palette
+           color = "black", # set color of frame
+           width = 0.5) + # set width of bars
+  geom_errorbar(aes(ymin = selfreport_mean - selfreport_se, # specify error bar aesthetics -> lower and upper limit
+                    ymax = selfreport_mean + selfreport_se),
+                width = 0.07, # set width of error bar 
+                color = "black") +
+  labs(title = "Bar Plot of Gender with Standard Errors",
+       x = "Gender",
+       y = "Mean Selfreport Score") +
+  coord_flip() + # flip x and y axis of plot
+  theme_minimal()
 
 ```
 
-- Exercise: How to capitalize 'Male' and 'Female' by wrangling the data before plotting?
+
 
 # Combining plots
 
@@ -386,7 +399,7 @@ ggplot(data = data_after_exclusions,
              y = amp_score)) +
   geom_point() +
   geom_smooth(method = "lm") +
-  facet_wrap(~ gender)
+  facet_wrap(~ gender) # create plots by gender and display plot for every value of gender next to each other
 
 ```
 

@@ -392,6 +392,8 @@ plot_all / (plot_women + plot_men)
 
 Without repeating yourself, you can also make a plot for different subsets using `facet_wrap()` or `facet_grid()`
 
+-> `facet_wrap()` is to {ggplot} as `group_by()` is to {dplyr}!
+
 ```{r fig.height=4, fig.width=8}
 
 ggplot(data = data_after_exclusions,

@@ -411,6 +411,21 @@ Improve the appearance of the plot, including its text, colors, theme, etc.
 
 ```{r}
 
+# data wrangling - adding a column age_category with values 30+ and sub 30 years
+data_added_age_cat <- data_after_exclusions %>% 
+  mutate(age_category = ifelse(age >= 30, "30+ years", "sub 30 years"))
+
+# plots for association between self-reports and AMP scores by gender and age
+ggplot(data = data_added_age_cat,
+  aes(x = mean_self_report,
+      y = amp_score)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  facet_grid(rows = vars(age_category),
+             cols = vars(gender))
+
+# needs a prettiness make-over :D
+
 
 
 ```

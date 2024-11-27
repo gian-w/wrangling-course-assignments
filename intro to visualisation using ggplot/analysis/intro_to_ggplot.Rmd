@@ -415,18 +415,30 @@ Improve the appearance of the plot, including its text, colors, theme, etc.
 
 # data wrangling - adding a column age_category with values 30+ and sub 30 years
 data_added_age_cat <- data_after_exclusions %>% 
-  mutate(age_category = ifelse(age >= 30, "30+ years", "sub 30 years"))
+  mutate(gender = stringr::str_to_title(gender),
+         age_category = ifelse(age >= 30, "30+ years", "sub 30 years"))
 
 # plots for association between self-reports and AMP scores by gender and age
 ggplot(data = data_added_age_cat,
-  aes(x = mean_self_report,
-      y = amp_score)) +
-  geom_point() +
-  geom_smooth(method = "lm") +
-  facet_grid(rows = vars(age_category),
-             cols = vars(gender))
+  aes(x = mean_self_report, # define x-axis
+      y = amp_score)) + # define y-axis
+  geom_point(shape = 21, # define shape of points (filled dot)
+             fill = "#FDE725",# set fill colour
+             alpha = 0.6, # set transparency of dots
+             position = "jitter") + # jitter dots
+  geom_smooth(method = "lm", # linear regression is fitted, including CIs
+              fullrange = TRUE, # expands the regression line to the range of the plot
+              color = "#7AD151", # colour of smoothing line
+              fill = "#404688", # colour of CIs
+              alpha = 0.2) + # transparency of CIs
+  labs(x = "Self-Report Mean Score",
+       y = "AMP Score",
+       title = "Association Between Self-Report and AMP-Scores by Gender and Age") +
+  theme_minimal() +
+  facet_grid(rows = vars(age_category), # rows of the grid should be age_category
+             cols = vars(gender)) # columns should be gender
 
-# needs a prettiness make-over :D
+
 
 
 

@@ -24,7 +24,7 @@ knitr::opts_chunk$set(message = FALSE,
 # disable scientific notation
 options(scipen = 999) 
 
-dir.create("plots")
+#dir.create("plots")
 
 ```
 
@@ -94,6 +94,8 @@ Cronbach's $\alpha$ = `r cronbachs_alpha_estimate`
 ## Plot simulated data
 
 ```{r}
+
+## Ian committed a coding sin here! He repeated code and changed only one thing (the item-number!)
 
 ggplot(data_wide_likert, aes(x = item_1)) +
   geom_histogram(binwidth = 1, boundary = -0.5) +
@@ -175,7 +177,7 @@ data_item_and_sum_scores <- data_wide_again %>%
   left_join(sum_scores, by = "id")
 
 # why joins are needed over bind_cols
-# wrong <- bind_cols(data_wide_again, sum_scores) %>% select(-id)
+# wrong <- bind_cols(data_wide_again, sum_scores) %>% select(-id) 
 ```
 
 # Practice

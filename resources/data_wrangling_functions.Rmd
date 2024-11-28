@@ -435,11 +435,36 @@ Keeps only unique/distinct rows from a data frame. Useful for inspecting the uni
 
 ## pivots
 
+There are two general types of data shapes: long and wide data. In wide data, every observation has just one row and repeated measurement timepoints for example are displayed as separate columns. This is what makes the data frame wiiiiiiiideeee. In long data, there are multiple rows for each observation and fewer columns. Repeated measurements are displayed as one row, making the data loooooooooong. Depending on the calculations, transformations or analyses you want to conduct, you will need to reshape the data from either wide to long or long to wide format. 
+
+A useful thing to know is that row-math is much faster than column-math in R. So sum scores for example are best calculated with data in long format rather than wide format!
+
+`pivot_wider()`:
+- creates one row for each observation
+- `names_from =` defines the names for the new columns that will be created; names should come from values in variable `x`
+- `values_from =` defines from where the values for the newly created columns should come from; values should come from variable `values`
+
+
+`pivot_longer()`: 
+- creates multiple rows for every observation
+- `cols =` which columns should become the "values" for the newly created column (e.g., three different columns named test_trial, pre_trial,  post_trial are put together in a newly created variable called "trial_type")
+  - selecting functions such as `starts_with()` can be used for the `cols =` argument
+- `names_to =` defines how the newly created column should be named; in the example above, this would be "trial_type"
+- `values_to = ` what should the new value column be called? Automatically takes all values in the cells of the specified cols and puts them in the new value column, respective to their observation
+
 ```{r}
 
-# tidyr::pivot_wider()
-
 # tidyr::pivot_longer()
+mtcars_long <- mtcars %>% 
+  pivot_longer(cols = c(cyl, gear, carb), # columns cylinder, gear and carburetors should be put in...
+               names_to = "part", # a new column called "parts"
+               values_to = "number_of_parts") # with the values of the former columns now in the new column called "number_of_parts"
+
+
+# tidyr::pivot_wider()
+mtcars_wide_again <- mtcars_long %>% 
+  pivot_wider(names_from = part, # back to wide format, with the new-old column names derived from "part"
+              values_from = number_of_parts) # and the values derived from "number_of_parts"
 
 ```
 

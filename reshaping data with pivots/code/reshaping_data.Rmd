@@ -186,7 +186,48 @@ Wrangle the demographics data included in this exercise more efficiently by resh
 
 ```{r}
 
+# read data
+data_demographics_raw <- read.csv("../data/raw/data_demographics_raw.csv")
 
+# check if there are duplicates
+data_demographics_raw |>
+  count(subject) |>
+  arrange(desc(n)) # yes, there is a duplicate entry for one subject! 2 seems to be the correct number of entries for each participant 
+
+# select variables and remove duplicate entries
+data_demographics_sub <- data_demographics_raw %>%
+  select(unique_id = subject, item = trialcode, response) %>% # select variables of interest and renaming them
+  distinct() # keep only unique rows from the data frame, since one participant has duplicate entries
+
+# sanity check after removing duplicates
+data_demographics_sub %>% 
+  count(unique_id) %>% 
+  arrange(desc(n)) 
+
+# now all participants have just two entries!
+
+# transform data to wide format
+data_demographics_wide <- data_demographics_sub %>% 
+  pivot_wider(names_from = item, # creates new columns from the values found in "item" (age and gender in this case)
+              values_from = response) # takes values from the "response" column to put in cells
+
+# cleaning the demographics data
+data_demographics_clean <- data_demographics_wide %>% 
+  mutate(age = stringr::str_remove_all(age, "[^\\d.]"),  # retains only digits and decimal points
+         age = na_if(age, ""), # after retaining only digits, there are empty values -> make them NA
+         age = as.numeric(age),
+         gender = stringr::str_to_lower(gender), # all strings in gender to lower case
+         gender = stringr::str_remove_all(gender, "[\\d.]"), # remove everything that is a digit between 0-9
+         gender = na_if(gender, ""), # after removing digits, there are empty cells -> make them NA
+         gender = case_when(gender == "woman" ~ "female", # if gender equals "woman", assign value "female"
+                            gender == "yes" ~ NA_character_, # if gender equals "yes", assign NA
+                            gender == "man" ~ "male", # if gender equals "man", assign value "male"
+                            gender == "girl" ~ "female", # if gender equals "girl", assign value "female"
+                            gender == "dude" ~ "male", # if gender equals "dude", assign value "male"
+                            gender == "non binary" ~ "non-binary", # if gender equals "non binary", assing "non-binary"
+                            TRUE ~ gender)) # anything else leave as it is (correct value "male" or "female")
+
+  
 
 ```
 

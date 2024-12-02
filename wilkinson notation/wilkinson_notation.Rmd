@@ -170,11 +170,15 @@ plot(predicted) +
 
 ```
 
-## Multi-level model
+## Multi-level model 
+
+Random effects are used to generalize to other (in this case) journals -> that is basically just a meta-analysis! $ y \sim 1 + (1 | articles) $. An effect size for let's say a clinical intervention is estimated by a regression with different effect sizes from different studies! There is a trade-off between precision of the effect size and the generalizability of an effect size. 
+
+Within the random effect term `(1 + gender | canton / school )` there is actually another regression model. Participants are nested within schools and schools are nested within cantons. `1 + gender` relates to the random slope of gender (men and women differ in slope). The intercepts are determined by `canton / school`, so every participant from GymO in Bern has the same intercept. 
 
 ```{r}
 
-res <- lmer(formula = count_selfreport_measures ~ 1 + year + (1 | subfield/journal),
+res <- lmer(formula = count_selfreport_measures ~ 1 + year + (1 | subfield/journal), # 1+year (fixed effects), (1|subfield/journal) are random effects, acknowledge that all the data are nested in journals and journals are nested in subfields
             data = dat)
 
 summary(res)

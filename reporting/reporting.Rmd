@@ -143,7 +143,7 @@ report(model)
 
 # table in html format - needs to be rounded manually
 report_table(model) |>
-  mutate(p = insight::format_p(p)) |>
+  mutate(p = insight::format_p(p)) |> # format_p will format p-values according to APA rules! 
   mutate_if(is.numeric, round_half_up, digits = 2) |>
   kable() |>
   kable_classic(full_width = FALSE)

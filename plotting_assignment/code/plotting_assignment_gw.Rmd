@@ -1,0 +1,78 @@
+---
+title: "Plotting Assignment - "
+author: "Gian Wegmueller"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_folding: show
+    highlight: haddock
+    theme: flatly
+    toc: yes
+    toc_float: yes
+---
+
+```{r, include=FALSE}
+
+# set knit options
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+
+# disable scientific notation
+options(scipen = 999) 
+
+
+```
+
+# Dependencies
+
+```{r}
+
+# update dependencies -> only include necessary packages
+
+library(readr)
+library(ggplot2)
+library(datasauRus) 
+library(scales)
+library(dplyr)
+library(tidyr)
+library(plotrix) 
+library(ThemePark)
+library(patchwork)
+library(janitor)
+library(knitr)
+library(kableExtra)
+
+```
+
+
+# Data exploration (temporary, should not be included in final file)
+
+```{r Data exploration}
+## Titanic dataset
+titanic_raw <- read_csv("../data/titanic_dataset.csv")
+
+
+
+
+## Amazon dataset
+amazon_raw <- read_csv("../data/amazon_dataset.csv")
+
+
+## App screentime dataset
+screentime_raw <- read_csv("../data/screentime_dataset.csv")
+
+
+```
+
+
+
+
+
+
+# Session info
+
+```{r}
+
+sessionInfo()
+
+```

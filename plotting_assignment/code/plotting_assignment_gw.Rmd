@@ -48,9 +48,10 @@ library(kableExtra)
 # Data exploration (temporary, should not be included in final file)
 
 ```{r Data exploration}
-## Food World Cup data
-food_raw <- read_csv("../data/food_world_cup_data.csv", locale = locale(encoding = "ISO-8859-1"))
+## Drug use data
+drugs_raw <- read_csv("../data/drug_use_by_age.csv")
 
+summary(drugs_raw)
 
 ```
 

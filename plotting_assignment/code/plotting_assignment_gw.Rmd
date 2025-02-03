@@ -48,18 +48,8 @@ library(kableExtra)
 # Data exploration (temporary, should not be included in final file)
 
 ```{r Data exploration}
-## Titanic dataset
-titanic_raw <- read_csv("../data/titanic_dataset.csv")
-
-
-
-
-## Amazon dataset
-amazon_raw <- read_csv("../data/amazon_dataset.csv")
-
-
-## App screentime dataset
-screentime_raw <- read_csv("../data/screentime_dataset.csv")
+## Food World Cup data
+food_raw <- read_csv("../data/food_world_cup_data.csv", locale = locale(encoding = "ISO-8859-1"))
 
 
 ```

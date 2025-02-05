@@ -118,7 +118,7 @@ drug_use_plot
 # Visualizing Heart Rate Data from the Lucerne Half-Marathon 2024
 
 ## Data Preparation Lucerne Half-Marathon
-Personal heart rate zones at the time of the race were: 
+My heart rate zones at the time of the race were: 
 
 - Zone 1: 98 - 116 bpm
 - Zone 2: 117 - 136 bpm
@@ -126,23 +126,39 @@ Personal heart rate zones at the time of the race were:
 - Zone 4: 156 - 175 bpm
 - Zone 5: >= 176 bpm
 
+These data were extracted from my personal Garmin Connect account. 
 
 
-```{r}
+
+```{r data prep lucerne half}
+# loading the data (requires readTCX-function from package trackeR)
 lucerne_half_24 <- readTCX("../data/lucerne_half_2024.tcx")
 
+# creating subset with variables of interest
 lucerne_half_24_bpm <- lucerne_half_24 %>% 
-  select(altitude, distance, heart_rate) %>% 
-  mutate(distance_km = distance/1000,
-         heart_rate_zone = case_when(heart_rate >= 98 & heart_rate <= 116 ~ "Zone 1",
+  select(altitude, distance, heart_rate) %>% # selecting variables of interest
+  mutate(distance_km = distance/1000, # creating distance_km variable by dividing 'distance' by 1000, because the latter is specified in metres
+         heart_rate_zone = case_when(heart_rate >= 98 & heart_rate <= 116 ~ "Zone 1", # creating heart_rate_zone variable according to data provided on Garmin Connect
                                      heart_rate >= 117 & heart_rate <= 136 ~ "Zone 2",
                                      heart_rate >= 137 & heart_rate <= 155 ~ "Zone 3",
                                      heart_rate >= 156 & heart_rate <= 175 ~ "Zone 4",
                                      heart_rate >= 176 ~ "Zone 5")) %>% 
-  relocate(distance_km, distance, altitude, heart_rate, heart_rate_zone)
+  relocate(distance_km, distance, altitude, heart_rate, heart_rate_zone) # reorder columns in data frame
+
+```
 
 
+## Visualization of Heart Rate During Lucerne Half-Marathon
 
+```{r data visualiziation lucerne half}
+heart_rate_plot <- ggplot(data = lucerne_half_24_bpm,
+                          aes(x = distance_km,
+                              y = heart_rate)) +
+  geom_smooth(method = "loess",
+              span = .005)
+
+
+heart_rate_plot
 ```
 
 

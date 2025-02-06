@@ -142,8 +142,20 @@ lucerne_half_24_bpm <- lucerne_half_24 %>%
                                      heart_rate >= 117 & heart_rate <= 136 ~ "Zone 2",
                                      heart_rate >= 137 & heart_rate <= 155 ~ "Zone 3",
                                      heart_rate >= 156 & heart_rate <= 175 ~ "Zone 4",
-                                     heart_rate >= 176 ~ "Zone 5")) %>% 
-  relocate(distance_km, distance, altitude, heart_rate, heart_rate_zone) # reorder columns in data frame
+                                     heart_rate >= 176 ~ "Zone 5"),
+         
+         zone_min = case_when(heart_rate_zone == "Zone 1" ~ 98, 
+                              heart_rate_zone == "Zone 2" ~ 117,
+                              heart_rate_zone == "Zone 3" ~ 137,
+                              heart_rate_zone == "Zone 4" ~ 156,
+                              heart_rate_zone == "Zone 5" ~ 176),
+         
+         zone_max = case_when(heart_rate_zone == "Zone 1" ~ 117, 
+                              heart_rate_zone == "Zone 2" ~ 137,
+                              heart_rate_zone == "Zone 3" ~ 156,
+                              heart_rate_zone == "Zone 4" ~ 176,
+                              heart_rate_zone == "Zone 5" ~ 190)) %>% 
+  relocate(distance_km, distance, altitude, heart_rate, heart_rate_zone, zone_min, zone_max) # reorder columns in data frame
 
 ```
 
@@ -154,11 +166,47 @@ lucerne_half_24_bpm <- lucerne_half_24 %>%
 heart_rate_plot <- ggplot(data = lucerne_half_24_bpm,
                           aes(x = distance_km,
                               y = heart_rate)) +
+  scale_x_continuous(breaks = seq(0, max(lucerne_half_24_bpm$distance_km), 1), 
+                     limits = c(0, max(lucerne_half_24_bpm$distance_km))) +
+  scale_y_continuous(breaks = seq(140, 190, 5),
+                     limits = c(140, 190)) +
   geom_smooth(method = "loess",
-              span = .005)
+              span = .003,
+              linewidth = .7) +
+  geom_rect(aes(xmin = 0, xmax = max(lucerne_half_24_bpm$distance_km), ymin = 176, ymax = 190),
+            fill = "red") +
+  geom_rect(aes(xmin = 0, xmax = max(lucerne_half_24_bpm$distance_km), ymin = 156, ymax = 175),
+            fill = "orange") +
+  geom_rect(aes(xmin = 0, xmax = max(lucerne_half_24_bpm$distance_km), ymin = 140, ymax = 155),
+            fill = "green")
 
 
 heart_rate_plot
+
+## better version here (less code)
+
+ggplot(data = lucerne_half_24_bpm,
+                          aes(x = distance_km,
+                              y = heart_rate)) +
+  scale_x_continuous(breaks = seq(0, max(lucerne_half_24_bpm$distance_km), 1), 
+                     limits = c(0, max(lucerne_half_24_bpm$distance_km))) +
+  scale_y_continuous(breaks = seq(140, 190, 5),
+                     limits = c(137, 190)) +
+  
+    geom_rect(data = lucerne_half_24_bpm,
+            aes(xmin = 0, xmax = max(distance_km),
+                ymin = zone_min, ymax = zone_max,
+                fill = heart_rate_zone)) +
+  scale_fill_viridis_d(option = "magma",
+                       begin = .3,
+                       end = .6,
+                       alpha = 1) +
+  
+  geom_smooth(method = "loess",
+              span = .003,
+              linewidth = .7,
+              colour = "black")
+
 ```
 
 

@@ -37,6 +37,7 @@ library(stringr)
 library(trackeR)
 library(leaflet)
 library(ggplot2)
+library(ggtext)
 library(hrbrthemes)
 
 
@@ -143,53 +144,27 @@ lucerne_half_24_bpm <- lucerne_half_24 %>%
          heart_rate_zone = as.factor(case_when(heart_rate >= 137 & heart_rate <= 155 ~ "Zone 3", # creating heart_rate_zone variable according to data provided on Garmin Connect
                                                heart_rate >= 156 & heart_rate <= 175 ~ "Zone 4",
                                                heart_rate >= 176 ~ "Zone 5")),
-         
-         zone_min = case_when(heart_rate_zone == "Zone 3" ~ 137,
-                              heart_rate_zone == "Zone 4" ~ 156,
-                              heart_rate_zone == "Zone 5" ~ 176),
-         
-         zone_max = case_when(heart_rate_zone == "Zone 3" ~ 156,
-                              heart_rate_zone == "Zone 4" ~ 176,
-                              heart_rate_zone == "Zone 5" ~ 190)) %>% 
-  relocate(latitude, longitude, distance_km, distance, altitude, heart_rate, heart_rate_zone, zone_min, zone_max) # reorder columns in data frame
+         # 
+         # zone_min = case_when(heart_rate_zone == "Zone 3" ~ 136,
+         #                      heart_rate_zone == "Zone 4" ~ 155,
+         #                      heart_rate_zone == "Zone 5" ~ 175),
+         # 
+         # zone_max = case_when(heart_rate_zone == "Zone 3" ~ 156,
+         #                      heart_rate_zone == "Zone 4" ~ 176,
+         #                      heart_rate_zone == "Zone 5" ~ 190)
+         ) %>% 
+  relocate(latitude, longitude, distance_km, distance, altitude, heart_rate, heart_rate_zone) # reorder columns in data frame
 
 ```
 
 
 ## Visualization of Heart Rate During Lucerne Half-Marathon
 
-```{r data visualiziation lucerne half, fig.width=10, fig.height=4}
-# heart_rate_plot <- ggplot(data = lucerne_half_24_bpm,
-#                           aes(x = distance_km,
-#                               y = heart_rate)) +
-#   scale_x_continuous(breaks = seq(0, max(lucerne_half_24_bpm$distance_km), 1), 
-#                      limits = c(0, max(lucerne_half_24_bpm$distance_km))) +
-#   scale_y_continuous(breaks = seq(140, 190, 5),
-#                      limits = c(140, 190)) +
-#   geom_smooth(method = "loess",
-#               span = .003,
-#               linewidth = .7) +
-#   geom_rect(aes(xmin = 0, xmax = max(lucerne_half_24_bpm$distance_km), ymin = 176, ymax = 190),
-#             fill = "red") +
-#   geom_rect(aes(xmin = 0, xmax = max(lucerne_half_24_bpm$distance_km), ymin = 156, ymax = 175),
-#             fill = "orange") +
-#   geom_rect(aes(xmin = 0, xmax = max(lucerne_half_24_bpm$distance_km), ymin = 140, ymax = 155),
-#             fill = "green")
-# 
-# 
-# heart_rate_plot
+```{r data visualiziation lucerne half, fig.width=10, fig.height=5}
 
-## better version here (less code) - heart rate zones as background colours of plot
+### Defining colour-blind friendly palettes using shades of usual heart rate zone colours.
 
-# create colour-blind friendly palette (Okabe-Ito)
-okabe_ito_palette <- c(
-  "Zone 3" = "#009E73",  # Bluish Green
-  "Zone 4" = "#F0E442",  # Yellow
-  "Zone 5" = "#CC79A7"   # Reddish Purple
-)
-
-
-# other pastel palette
+# palette for colouring background zones in plot
 pastel_palette <- c(
   "Zone 3" = "#CAF2C2",
   "Zone 4" = "#FFF8B8",
@@ -204,62 +179,107 @@ contrast_palette <- c(
   "Zone 5" = "#D3473F"
 )
 
+### Plotting
 
-ggplot(data = lucerne_half_24_bpm,
-                          aes(x = distance_km,
-                              y = heart_rate)) +
-  #or maybe try geom annotate?? better for transparency maybe? 
-  annotate(geom = "rect", xmin = -0.2, xmax = max(lucerne_half_24_bpm$distance_km),
-           ymin = 140, ymax = 156,
-           fill = "#CAF2C2",
-           colour = NA,
-           alpha = 0.8) +
-    annotate(geom = "rect", xmin = -0.2, xmax = max(lucerne_half_24_bpm$distance_km),
-           ymin = 156, ymax = 176,
-           fill = "#FFF8B8",
-           colour = NA,
-           alpha = 0.8) +
-    annotate(geom = "rect", xmin = -0.2, xmax = max(lucerne_half_24_bpm$distance_km),
-           ymin = 176, ymax = 190,
-           fill = "#FFD6C9",
-           colour = NA,
-           alpha = 0.8) +
+ggplot(data = lucerne_half_24_bpm, # define data
+                          aes(x = distance_km, # distance on x-axis
+                              y = heart_rate)) + # heart rate on y-axis
   
-  # geom_rect(data = lucerne_half_24_bpm,
-  #           aes(xmin = 0, xmax = max(distance_km),
-  #               ymin = zone_min, ymax = zone_max,
-  #               fill = heart_rate_zone),
-  #           colour = NA,
-  #           alpha = 0.7) +
+  # adding background for Zone 3
+  annotate(geom = "rect", xmin = -0.2, xmax = max(lucerne_half_24_bpm$distance_km), 
+           ymin = 140, ymax = 156, # defining limits on y-axis (156 not 155 as max for neat transition to next zone)
+           fill = "#CAF2C2", # Zone 3 colour
+           colour = NA, # no frame 
+           alpha = 0.8) + # setting transparency
   
-  # scale_fill_manual(values = pastel_palette,
-  #                   guide = guide_legend(title = "Heart Rate Zones",
-  #                                        reverse = TRUE,
-  #                                        override.aes = list(alpha = 1))) +
-  geom_line(aes(x = distance_km,
+  # adding description of Zone 3
+  annotate(geom = "text", 
+           x = 21.3, y = 142, # setting position of text label
+           label = "Zone 3 - Aerobic", 
+           colour = "black", 
+           fontface = "bold", # format to bold
+           hjust = 1) + # right align
+  
+  # adding background for Zone 4
+    annotate(geom = "rect", xmin = -0.2, xmax = max(lucerne_half_24_bpm$distance_km),
+           ymin = 156, ymax = 175.5, # defining limits on y-axis (.5 value for cleaner transition to next zone)
+           fill = "#FFF8B8", # Zone 4 colour
+           colour = NA, # no frame
+           alpha = 0.8) + # setting transparency
+  
+  # adding description of Zone 4
+    annotate(geom = "text", 
+             x = 21.3, y = 158, 
+             label = "Zone 4 - Threshold", 
+             colour = "black",
+             fontface = "bold",
+             hjust = 1) +
+  
+  # adding background for Zone 5
+    annotate(geom = "rect", xmin = -0.2, xmax = max(lucerne_half_24_bpm$distance_km),
+           ymin = 175.5, ymax = 193, # defining limits on y-axis
+           fill = "#FFD6C9", # Zone 5 colour
+           colour = NA, # no frame
+           alpha = 0.8) + # setting transparency
+  
+  # adding description of Zone 5
+    annotate(geom = "text", 
+             x = 21.3, y = 177, 
+             label = "Zone 5 - Max", 
+             colour = "black",
+             fontface = "bold",
+             hjust = 1) +
+
+  # adding heart rate line to plot
+  geom_line(aes(x = distance_km, # setting aesthetics again
                 y = heart_rate,
-                colour = heart_rate_zone,
-                group = 1),
-            linewidth = 1,
-            lineend = "round") +
+                colour = heart_rate_zone, # colour line according to heart rate zones
+                group = 1), # makes sure just one line is added, not three separate lines for each HRZ
+            linewidth = 1) + # setting line-thickness 
   
-  scale_colour_manual(values = contrast_palette,
-                      guide = "none") +
+  # defining colours for geom_line
+  scale_colour_manual(values = contrast_palette, # using contrast_palette defined above
+                      guide = "none") + # no legend
   
-  scale_x_continuous(breaks = seq(0, max(lucerne_half_24_bpm$distance_km), 1), 
-                     limits = c(-0.2, max(lucerne_half_24_bpm$distance_km)),
-                     expand = c(0, 0)) +
+  # formatting x-axis
+  scale_x_continuous(breaks = seq(0, max(lucerne_half_24_bpm$distance_km), 1), # adding breaks for every km
+                     limits = c(-0.2, max(lucerne_half_24_bpm$distance_km)), # setting limits of scale
+                     expand = c(0, 0)) + # get rid of blank space between HRZ and axis
   
-  scale_y_continuous(breaks = seq(140, 190, 5),
-                     limits = c(140, 190),
-                     expand = c(0, 0)) +
+  # formatting y-axis 
+  scale_y_continuous(breaks = seq(140, 190, 5), # adding breaks from 140 to 190 by steps of 5
+                     limits = c(140, 193), # setting limits of scale
+                     expand = c(0, 0)) + # get rid of blank space between HRZ and axis
   
-  theme_classic() +
-  theme(panel.grid.major.y = element_blank(),
-        panel.grid.minor.y = element_blank())
+  # adding text and titles
+  labs(title = "Heart Rate Lucerne Half-Marathon 2024",
+       subtitle = "A visualization of my personal heart rate data collected with a *Garmin Forerunner 255* running watch during the Lucerne City Half-Marathon on the 27th of October 2024. I crossed the finish line with a time of **1:39:25**, averaging **4:42 minutes** per kilometer.",
+       caption = "<sup>*</sup>bpm = beats per minute") +
   
-
-
+  xlab("Distance in km") +
+  ylab("Heart Rate (bpm)<sup>*</sup>") +
+  
+  # setting theme
+  theme_ipsum(base_family = "sans", # defining font
+              base_size = 11, 
+              subtitle_size = 12, # setting size for subtitle
+              axis_title_size = 12, # setting size for axis titles
+              axis_title_just = "lt", # left adjust axis titles
+              plot_title_margin = 30, # setting margin for plot title
+              subtitle_margin = 30, # setting margin for subtitle
+              plot_margin = margin(15,15,15,15)) + # setting margins for plot
+  
+  # fine-tuning of theme
+  theme(plot.title = element_textbox_simple(margin = margin(b = 15)), # defining margin for title textbox
+        plot.subtitle = element_textbox_simple(margin = margin(b = 20)), # defining margin for subtitle textbox, automatic line breaks with element_textbox_simple()
+        plot.caption = element_markdown(), # defining caption as markdown element (allows for superscript in text)
+        panel.grid.major.y = element_blank(), # getting rid of major...
+        panel.grid.minor.y = element_blank(), # ...and minor horizontal gridlines 
+        panel.background = element_rect(colour = "darkgrey", size = 1), # adding a subtle frame to plot
+        axis.title.x = element_text(margin = margin(10,0,0,0)), # setting margin for x-axis title
+        axis.title.y = element_markdown(margin = margin(0,10,0,0), # setting margin for y-axis title, and define as markdown to allow for superscript notation
+                                        hjust = 0.92)) # moving title on vertical dimension to align better with scale
+  
 
 
 

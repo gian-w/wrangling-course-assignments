@@ -24,7 +24,6 @@ options(scipen = 999)
 ```
 
 # Dependencies
-
 ```{r}
 
 library(readr)
@@ -159,24 +158,28 @@ drug_use_plot
 The plot obviously has a number of issues:
 
 **1. Colours**
+
 - The fill colour of the bins is too bright and is the same for both generations. 
 - The frame surrounding the bins is coloured very similarly for both generations, and poses no contrast to the fill colour. 
 - The background is dark gray, which causes the blue lines to blend right in.
 - Colours in general are not colour-blind friendly/accessible.
 
 **2. Axes**
+
 - The x-axis labels are overlapping and completely illegible. Further, they display weird decimal places.
 - The y-axis labels are misaligned with the bins, making it impossible to decipher which bin belongs to which drug.
 - Further, the y-axis could be mistaken for frequency or count, due to the use of bins. 
 - Both axes are poorly labelled and scaled
 
 **3. Data Elements**
+
 - Bins are simply the wrong choice for displaying point estimate values
 - Bins are stacked, making it impossible to distinguish which bin belongs to which drug
 - The line chart implies a temporal trend or change, which is not present at all.
 - Line chart is completely unnecessary and confusing
 
 **4. Plot Elements**
+
 - Gridlines make it even more cluttered
 - The purpose of the legend "count" is totally unclear in this case
 - The "gen" legend is too small and has all the other colour issues as well
@@ -311,22 +314,26 @@ ggplot(data = lucerne_half_24_bpm, # define data
 ### Why is this a good plot?
 
 **1. Colours:** 
+
 - Uses intuitive heart rate zone colours used widely in the endurance sport community.
 - Colour shades are colour-blind friendly, making it accessible. 
 - The lines are coloured in the same way as the heart rate zones, but use darker tones to ensure contrast.
 
 **2. Axes:**
+
 - x-axis is intuitively interpretable, distance increases from left to right.
 - y-axis also intuitively interpretable, colouring of heart rate zones aids in interpretation of this axis as well.
 - Both axes are clearly titled and labelled, breaks are even and display relevant information. 
 - Abbreviation "bpm" is explained in caption of plot
 
 **3. Data Elements:**
+
 - Heart rate zones displayed as coloured areas of plot, and clearly labelled with their related endurance information.
 - Heart rate displayed as single line, coloured conditionally according to heart rate zone. This allows for a nice overview and intuition about distance spent in zones during the half-marathon.
 - Further, sudden changes in heart rate are easily visible. 
 
 **4. Plot Elements:** 
+
 - Title is clear
 - Subtitle conveys more information about the data displayed in the plot and establishes context
 - Dimensions of plot are harmonious

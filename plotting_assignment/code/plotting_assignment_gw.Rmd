@@ -39,22 +39,13 @@ library(leaflet)
 library(ggplot2)
 library(ggtext)
 library(hrbrthemes)
-
-
-library(datasauRus) 
-library(scales)
-
-library(plotrix) 
-library(ThemePark)
-library(patchwork)
-
 library(knitr)
-library(kableExtra)
 
 ```
 
 
-# Data exploration (temporary, should not be included in final file)
+# Data Wrangling
+
 
 ```{r Data exploration}
 ## Drug use data
@@ -63,7 +54,7 @@ drugs_raw <- read_csv("../data/drug_use_by_age.csv")
 
 ```
 
-## Data Preparation Drug Use
+## Data Preparation Drug Use - Bad Plot
 
 ```{r Data prep}
 drugs_comparison <- drugs_raw %>% 
@@ -84,7 +75,36 @@ drugs_comparison <- drugs_raw %>%
 
 ```
 
-## Data Visualization Median Use Frequency
+## Data Preparation Lucerne Half-Marathon - Good Plot
+
+```{r data prep lucerne half}
+
+# loading the Garmin Connect activity data (requires readTCX-function from package trackeR)
+lucerne_half_24 <- readTCX("../data/lucerne_half_2024.tcx")
+
+# creating subset with variables of interest
+lucerne_half_24_bpm <- lucerne_half_24 %>% 
+  select(latitude, longitude, altitude, distance, heart_rate) %>% # selecting variables of interest
+  mutate(distance_km = distance/1000, # creating distance_km variable by dividing 'distance' by 1000, because the latter is specified in metres
+         heart_rate_zone = as.factor(case_when(heart_rate >= 137 & heart_rate <= 155 ~ "Zone 3", # creating heart_rate_zone variable according to data provided on Garmin Connect
+                                               heart_rate >= 156 & heart_rate <= 175 ~ "Zone 4",
+                                               heart_rate >= 176 ~ "Zone 5"))) %>% 
+  relocate(latitude, longitude, distance_km, distance, altitude, heart_rate, heart_rate_zone) # reorder columns in data frame
+
+
+### SLICED DATASET FOR INTERACTIVE MAP ###
+# Due to the large number of observations in the complete dataset, the loop for rendering the interactive map takes up a lot of computational resources. Slicing the dataset in half by deleting every second row still retains more than enough data points to create a map without any significant loss of information
+
+lucerne_half_24_sliced <- lucerne_half_24_bpm %>% 
+  slice(seq(1, n(), 2))
+
+```
+
+
+
+
+# Plots
+## Bad Plot - Median Use Frequency
 
 ```{r Visualization}
 
@@ -118,47 +138,18 @@ drug_use_plot <- ggplot(data = drugs_comparison,
 drug_use_plot
 ```
 
-# Visualizing Heart Rate Data from the Lucerne Half-Marathon 2024
 
-## Data Preparation Lucerne Half-Marathon
-My heart rate zones at the time of the race were: 
+## Good Plot - Heart Rate Data from the Lucerne Half-Marathon 2024
+
+The good plot visualizes my personal heart rate data from the Lucerne City Half-Marathon on October 27, 2024. I tracked the race with a Garmin Forerunner 255 running watch, which I have been using since July to collect training and overall fitness data. The Garmin Connect website allows you to download various types of information from all your activities, including GPS, pace, and heart rate data. According to the Garmin Connect log for the Lucerne Half-Marathon, my heart rate zones at the time of the race were: 
 
 - Zone 1: 98 - 116 bpm
 - Zone 2: 117 - 136 bpm
 - Zone 3: 137 - 155 bpm
 - Zone 4: 156 - 175 bpm
-- Zone 5: >= 176 bpm
-
-These data were extracted from my personal Garmin Connect account. 
+- Zone 5: $\geq$ 176 bpm
 
 
-
-```{r data prep lucerne half}
-# loading the data (requires readTCX-function from package trackeR)
-lucerne_half_24 <- readTCX("../data/lucerne_half_2024.tcx")
-
-# creating subset with variables of interest
-lucerne_half_24_bpm <- lucerne_half_24 %>% 
-  select(latitude, longitude, altitude, distance, heart_rate) %>% # selecting variables of interest
-  mutate(distance_km = distance/1000, # creating distance_km variable by dividing 'distance' by 1000, because the latter is specified in metres
-         heart_rate_zone = as.factor(case_when(heart_rate >= 137 & heart_rate <= 155 ~ "Zone 3", # creating heart_rate_zone variable according to data provided on Garmin Connect
-                                               heart_rate >= 156 & heart_rate <= 175 ~ "Zone 4",
-                                               heart_rate >= 176 ~ "Zone 5")),
-         # 
-         # zone_min = case_when(heart_rate_zone == "Zone 3" ~ 136,
-         #                      heart_rate_zone == "Zone 4" ~ 155,
-         #                      heart_rate_zone == "Zone 5" ~ 175),
-         # 
-         # zone_max = case_when(heart_rate_zone == "Zone 3" ~ 156,
-         #                      heart_rate_zone == "Zone 4" ~ 176,
-         #                      heart_rate_zone == "Zone 5" ~ 190)
-         ) %>% 
-  relocate(latitude, longitude, distance_km, distance, altitude, heart_rate, heart_rate_zone) # reorder columns in data frame
-
-```
-
-
-## Visualization of Heart Rate During Lucerne Half-Marathon
 
 ```{r data visualiziation lucerne half, fig.width=10, fig.height=5}
 
@@ -279,79 +270,67 @@ ggplot(data = lucerne_half_24_bpm, # define data
         axis.title.x = element_text(margin = margin(10,0,0,0)), # setting margin for x-axis title
         axis.title.y = element_markdown(margin = margin(0,10,0,0), # setting margin for y-axis title, and define as markdown to allow for superscript notation
                                         hjust = 0.92)) # moving title on vertical dimension to align better with scale
-  
-
-
-
 
 ```
 
+### Interactive Map
 
-## Interactive Map
+In addition to the plot displaying the heart rate across the half-marathon distance, this interactive map displays the route of the Lucerne City Half-Marathon, conditionally coloured by heart rate zone. 
+
 ```{r}
-# Create hr_colour vector
-hr_colour <- viridis_pal(option = "turbo", begin = 0.5, end = 0.8)(3)
 
-## Add colour variable to dataset for easier mapping
-lucerne_half_24_bpm <- lucerne_half_24_bpm %>% 
-  mutate(hrz_colour = case_when(heart_rate_zone == "Zone 3" ~ hr_colour[1],
-                                heart_rate_zone == "Zone 4" ~ hr_colour[2],
-                                heart_rate_zone == "Zone 5" ~ hr_colour[3]))
-
-
-
-
-hr_zones <- c("Zone 3", "Zone 4", "Zone 5")
-
-names(hr_colours) <- hr_zones
-hr_palette <- colorFactor(palette = hr_colours, domain = lucerne_half_24_bpm$heart_rate_zone)
-
-## create continuous colour palette for heart rate
-hr_colours_c <- viridis_pal(option = "turbo", begin = 0.5, end = 0.8)(100)
-hr_palette_c <- colorNumeric(palette = hr_colours_c, domain = lucerne_half_24_bpm$heart_rate)
-
-
-### SLICED DATASET------------------------------------------------------------###
-lucerne_half_24_sliced <- lucerne_half_24_bpm %>% 
-  slice(seq(1, n(), 2))
-
+### Create hear rate zone colour palette function using the contrast_palette
+hrz_palette <- colorFactor(palette = contrast_palette, domain = lucerne_half_24_bpm$heart_rate_zone)
 
 ## interactive map to visualize route and heart rate zones
 lucerne_half_map <- leaflet(lucerne_half_24_sliced) %>% 
-  addProviderTiles(providers$CartoDB.Positron) 
+  addProviderTiles(providers$CartoDB.Positron) # adding map layer
 
-  # Loop through the data and add segments individually
+  # Loop through the data and add segments individually to colour them according to heart rate zone
 for (i in 1:(nrow(lucerne_half_24_sliced) - 1)) {
   lucerne_half_map <- lucerne_half_map %>%   
   addPolylines(
-      lng = c(lucerne_half_24_sliced$longitude[i], lucerne_half_24_sliced$longitude[i + 1]),
-      lat = c(lucerne_half_24_sliced$latitude[i], lucerne_half_24_sliced$latitude[i + 1]),
-      color = hr_palette(lucerne_half_24_sliced$heart_rate_zone[i]),  # Color by heart rate
-      weight = 4,
-      opacity = 0.8
+      lng = c(lucerne_half_24_sliced$longitude[i], lucerne_half_24_sliced$longitude[i + 1]), # start of segment at the longitude of the ith observation, end of segment at the ith + 1 observation
+      lat = c(lucerne_half_24_sliced$latitude[i], lucerne_half_24_sliced$latitude[i + 1]), # same here for latitude
+      color = hrz_palette(lucerne_half_24_sliced$heart_rate_zone[i]),  # Color by heart rate zone of the ith obs.
+      weight = 4, # stroke width in pixels
+      opacity = 0.8 # stroke opacity
     )
 }
 
 
 lucerne_half_map <- lucerne_half_map %>% 
-  setView(lat = 47.0300000000000, lng = 8.318685121853448, zoom = 12.5)
-
-lucerne_half_map
-
- 
-
-addPolylines(lat = ~latitude, lng = ~longitude, color = ~hr_palette_c(lucerne_half_24_bpm$heart_rate),
-               weight = 4, 
-               opacity = .8) %>% 
   
+  # add start point marker to map
+   addMarkers(lng = lucerne_half_24_sliced$longitude[1], lat = lucerne_half_24_sliced$latitude[1], # first GPS location
+              popup = "Start", label = "Start", # add label to marker
+             icon = icons(
+               iconUrl = "https://upload.wikimedia.org/wikipedia/commons/c/ce/Green_dot_25.svg", # free to use icon URL
+               iconWidth = 30, iconHeight = 30)) %>% # define icon size
+  
+  # add finish point marker to map
+  addMarkers(lng = lucerne_half_24_sliced$longitude[2992], lat = lucerne_half_24_sliced$latitude[2992], # last GPS location
+             popup = "Finish", label = "Finish", # add label to marker
+             icon = icons(
+               iconUrl = "https://upload.wikimedia.org/wikipedia/commons/7/7d/Japanese_crest_Maru_ni_Takanashi%28White_background%29.svg", # free to use icon URL
+               iconWidth = 15, iconHeight = 15)) %>% # define icon size
+  
+  # add colour legend to map
+  addLegend(position = "bottomleft",
+            pal = hrz_palette,
+            values = lucerne_half_24_sliced$heart_rate_zone,
+            title = "Heart Rate Zone",
+            opacity = 1) %>% 
+  setView(lat = 47.0300000000000, lng = 8.318685121853448, zoom = 12.5) # setting default view of map
 
-#TODO
-# add start and finish line symbols to route
-# add value based colouring
-# add zoom for default view
-# clean up this code chunk
+
+lucerne_half_map 
+
 
 ```
+
+
+
 
 
 # Session info
